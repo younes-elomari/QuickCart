@@ -137,7 +137,7 @@ export const productsDummyData = [
     "name": "Apple AirPods Pro 2nd gen",
     "description": "Apple AirPods Pro (2nd Gen) with MagSafe Case (USB-C) provide excellent sound, active noise cancellation, and a comfortable fit. The USB-C case ensures quick charging, and they pair seamlessly with Apple devices for an effortless audio experience.",
     "price": 499.99,
-    "offerPrice": 399.99,
+    "offerPrice": 499.99,
     "image": [
       "https://raw.githubusercontent.com/avinashdm/gs-images/main/quickcart/k4dafzhwhgcn5tnoylrw.webp",
       "https://raw.githubusercontent.com/avinashdm/gs-images/main/quickcart/j212frakb8hdrhvhajhg.webp",
