@@ -73,6 +73,7 @@ export const syncUserDeletion = inngest.createFunction(
 );
 
 // Inngest function to create user's order in database
+
 export const createUserOrder = inngest.createFunction(
   {
     id: "create-user-order",
@@ -80,22 +81,74 @@ export const createUserOrder = inngest.createFunction(
       maxSize: 5,
       timeout: "5s",
     },
+    // Add retries for database operations
+    retries: 3,
   },
   { event: "order/created" },
-  async ({ events }) => {
-    const orders = events.map((event) => {
+  async ({ events, logger }) => {
+    try {
+      // Validate and transform events
+      const orders = events.map((event) => {
+        if (!event.data.userId || !event.data.items) {
+          throw new Error(`Invalid order data: ${JSON.stringify(event.data)}`);
+        }
+
+        return {
+          userId: event.data.userId,
+          items: event.data.items,
+          amount: event.data.amount, // Fixed typo (was 'ammount')
+          address: event.data.address,
+          date: event.data.date || new Date(), // Default to now if not provided
+        };
+      });
+
+      logger.debug(`Processing ${orders.length} orders`);
+
+      // Ensure database connection is established
+      const db = await connectDB(); // Make sure connectDB returns the connection
+
+      // Insert orders with error handling
+      const result = await Order.insertMany(orders, { ordered: false }); // Continue on error
+
+      logger.debug(`Inserted ${result.length} orders`);
+
       return {
-        userId: event.data.userId,
-        items: event.data.items,
-        amount: event.data.ammount,
-        address: event.data.address,
-        date: event.data.date,
+        success: true,
+        processed: result.length,
+        insertedCount: result.insertedCount,
       };
-    });
-
-    await connectDB();
-    await Order.insertMany(orders);
-
-    return { success: true, processed: orders.length };
+    } catch (error) {
+      logger.error("Failed to create orders:", error);
+      throw error; // Let Inngest handle retries
+    }
   }
 );
+
+// export const createUserOrder = inngest.createFunction(
+//   {
+//     id: "create-user-order",
+//     batchEvents: {
+//       maxSize: 5,
+//       timeout: "5s",
+//     },
+//   },
+//   { event: "order/created" },
+//   async ({ events }) => {
+//     const orders = events.map((event) => {
+//       return {
+//         userId: event.data.userId,
+//         items: event.data.items,
+//         amount: event.data.ammount,
+//         address: event.data.address,
+//         date: event.data.date,
+//       };
+//     });
+
+//     console.log("orders");
+
+//     await connectDB();
+//     await Order.insertMany(orders);
+
+//     return { success: true, processed: orders.length };
+//   }
+// );
